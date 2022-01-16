@@ -1,36 +1,46 @@
 // This script configures the .env.development.local file with additional environment variables to configure HTTPS using the ASP.NET Core
 // development certificate in the webpack development proxy.
 
+// подключаем библиотеки
 const fs = require('fs');
 const path = require('path');
 
+// получаем адрес директории, где ключи для https лежат
 const baseFolder =
   process.env.APPDATA !== undefined && process.env.APPDATA !== ''
     ? `${process.env.APPDATA}/ASP.NET/https`
     : `${process.env.HOME}/.aspnet/https`;
 
+// получаем имя сертификата
 const certificateArg = process.argv.map(arg => arg.match(/--name=(?<value>.+)/i)).filter(Boolean)[0];
 const certificateName = certificateArg ? certificateArg.groups.value : process.env.npm_package_name;
 
+// если имя сертификата невалидно, возвращаем ошибку
 if (!certificateName) {
   console.error('Invalid certificate name. Run this script in the context of an npm/yarn script or pass --name=<<app>> explicitly.')
   process.exit(-1);
 }
 
+// получаем пути до файлов сертификата
 const certFilePath = path.join(baseFolder, `${certificateName}.pem`);
 const keyFilePath = path.join(baseFolder, `${certificateName}.key`);
 
+// если файла .env.development.local не существует, то создаем его и записываем в него файлы сертификата
 if (!fs.existsSync('.env.development.local')) {
   fs.writeFileSync(
     '.env.development.local',
 `SSL_CRT_FILE=${certFilePath}
 SSL_KEY_FILE=${keyFilePath}`
-  );
+    );
+    // в противном случае:
 } else {
+    // читаем этот файл, конвертируем в строку и удаляем символ переноса
   let lines = fs.readFileSync('.env.development.local')
     .toString()
     .split('\n');
-
+    // далее проверяем, имеются ли в файле строки, соответствующие одному из шаблонов
+    // /SSL_CRT_FILE=.*/
+    // /SSL_KEY_FILE=.*/
   let hasCert, hasCertKey = false;
   for (const line of lines) {
     if (/SSL_CRT_FILE=.*/i.test(line)) {
@@ -39,7 +49,8 @@ SSL_KEY_FILE=${keyFilePath}`
     if (/SSL_KEY_FILE=.*/i.test(line)) {
       hasCertKey = true;
     }
-  }
+    }
+    // если после проверки строки не были обнаружены, то в них заносятся значения, соответствующие пути до сертификата
   if (!hasCert) {
     fs.appendFileSync(
       '.env.development.local',
