@@ -7,6 +7,7 @@ import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 import reportWebVitals from './reportWebVitals';
 
 const baseUrl = document.getElementsByTagName('base')[0].getAttribute('href');
+// document.getElementById('id_value'); - получить элемент по id
 const rootElement = document.getElementById('root');
 
 ReactDOM.render(
