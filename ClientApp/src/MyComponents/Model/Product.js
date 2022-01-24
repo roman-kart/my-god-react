@@ -1,26 +1,11 @@
-import React, {Component} from "react";
+export function product(id, name, quantity, cost) {
+    this.id = id;
+    this.name = name;
+    this.quantity = quantity;
+    this.cost = cost;
+}
 
-export class ProductOptions extends Component{
-    constructor(props){
-        super(props);
-    }
-    productList = [
-        "Apple",
-        "Orange",
-        "Apple Juice",
-        "Pancakes",
-        "Coca-cola",
-        "Pepsi"
-    ]
-
-    render(){
-        var _this = this;
-        return(
-            Array.prototype.map.call(this.productList, function (item) {
-                return <option key={item}>
-                    {item}
-                </option>
-            }, _this)
-        );
-    }
+export function productOption(id, name){
+    this.id = id;
+    this.name = name;    
 }

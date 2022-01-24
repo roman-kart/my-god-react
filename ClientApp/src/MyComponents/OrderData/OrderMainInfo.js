@@ -8,24 +8,16 @@ import {
     CardTitle,
     Alert 
 } from "reactstrap";
-import { CheckElementInList } from "../CheckFunctions.js/CheckElementInList";
-import { CheckEmptyConstraint } from "../CheckFunctions.js/CheckEmptyConstraint";
-import { IsDataEmpty } from "../CheckFunctions.js/IsEmpty";
-import { LinkedList } from "../DataStruct/LinkedList";
-import { ProductOptions } from "../Model/Product";
+import { ProductOptions } from "../Model/ProductOptions";
 import { ShopsOptions } from "../Model/Shops";
-
-function product(name, quantity, cost) {
-    this.name = name;
-    this.quantity = quantity;
-    this.cost = cost;
-}
+import { product } from "../Model/Product";
+import { CheckProductAll } from "../CheckFunctions.js/CheckProductAll";
 
 export class OrderMainInfo extends Component{
     constructor(props){
         super(props);
         this.addProduct = this.addProduct.bind(this);
-        this.state = {userProductListState: [], alertForUser: [] }
+        this.state = {userProductListState: [], alertForUser: [], alertForUserAddedProduct: [] }
     }
 
     // продукты, которые добавил пользователя
@@ -35,6 +27,10 @@ export class OrderMainInfo extends Component{
 
     // предупреждения для пользователя
     alertForUser = [
+
+    ];
+
+    alertForUserAddedProduct = [
 
     ];
 
@@ -49,18 +45,16 @@ export class OrderMainInfo extends Component{
         let productCost = document.getElementById("productCost").value;
         let productQuantity = document.getElementById("productQuantity").value;
 
-        let productForAdd = new product(productName, productQuantity, productCost);
+        let productForAdd = new product(1, productName, productQuantity, productCost);
 
-        let isProdValid = true;
-
-        // если не прошел проверку на пустые значения, то делаем продукт невалидным
-        if (!CheckEmptyConstraint([productName, productQuantity, productCost], this.alertForUser)) {
-            isProdValid = false;
-        }
-        // если такой продукт уже есть в списке, то делаем продукт невалидным
-        if (CheckElementInList(productForAdd, this.userProductList, this.alertForUser)) {
-            isProdValid = false;
-        }
+        let isProdValid = CheckProductAll(
+            productForAdd, 
+            [productName, productQuantity, productCost],
+            [productQuantity],
+            [productCost],
+            this.userProductList,
+            this.alertForUser
+        );
 
         console.log(isProdValid);
 
@@ -109,15 +103,18 @@ export class OrderMainInfo extends Component{
                         </CardTitle>
                         <CardBody>
                             <p>
-                                Product: <Input type='select' id="productName">
+                                <Label for="productName">Product: </Label>
+                                <Input type='select' id="productName">
                                     <ProductOptions/>
                                 </Input>
                             </p>
                             <p>
-                                Cost: <Input type='number' id="productCost"></Input>
+                                <Label for="productCost">Cost: </Label>
+                                <Input type='number' id="productCost"></Input>
                             </p>
                             <p>
-                                Quantity: <Input type='number' id="productQuantity"></Input>
+                                <Label for="productQuantity">Quantity: </Label>
+                                <Input type='number' id="productQuantity"></Input>
                             </p>
                         </CardBody>
                     </Card>
@@ -129,6 +126,16 @@ export class OrderMainInfo extends Component{
                     Add new order
                 </Button>
                 <div>
+                    <div id="alertForUser">
+                        {this.state.alertForUserAddedProduct.map((item) => {
+                            return(
+                                <Alert color="danger">
+                                    {item}
+                                </Alert>
+                            );
+                        })}
+                    </div>
+
                     {this.state.userProductListState.map(function (item) {
                         return(
                             <Card body>
@@ -136,8 +143,65 @@ export class OrderMainInfo extends Component{
                                     {item.name}
                                 </CardTitle>
                                 <CardBody>
-                                    Quantity : {item.quantity} <br/>
-                                    Cost: {item.cost}
+                                    <Label for={`productCardQuantity${item.id}`}>Quantity: </Label>
+                                    <Input type="number" placeholder={item.quantity} id={`productCardQuantity${item.id}`}></Input><br/>
+
+                                    <Label for={`productCardCost${item.id}`}>Cost: </Label>
+                                    <Input type="number" placeholder={item.cost} id={`productCardCost${item.id}`}></Input>
+
+                                    <Button 
+                                        onClick={() => {
+                                            _this.userProductList.splice(
+                                                _this.userProductList.indexOf(item), 1
+                                            );
+                                            _this.setState({
+                                                userProductList : _this.userProductList
+                                            });
+                                        }}
+                                        color="danger"
+                                    >
+                                        Delete
+                                    </Button>
+
+                                    <Button
+                                        color="success"
+                                        onClick={() => {
+                                            const indexOfElementForEdit = _this.userProductList.indexOf(item);
+                                            let quantity = document.getElementById(`productCardQuantity${item.id}`).value;
+                                            let cost = document.getElementById(`productCardCost${item.id}`).value;
+
+                                            // если пользователь не изменил одно из свойств, необходимо присвоить ему существующее значение из элемента 
+                                            quantity = quantity === "" ? item.quantity : quantity;
+                                            cost = cost === "" ? item.cost : cost;
+
+                                            if (CheckProductAll(
+                                                new product(-100, "undefined"),
+                                                [quantity, cost],
+                                                [quantity],
+                                                [cost],
+                                                _this.userProductList,
+                                                _this.alertForUserAddedProduct
+                                                )) {
+                                                _this.userProductList[indexOfElementForEdit].quantity = quantity;
+                                                _this.userProductList[indexOfElementForEdit].cost = cost;
+                                                _this.setState({
+                                                    userProductList: _this.userProductList
+                                                });
+                                            }
+                                            else{
+                                                // убираем введенные пользователем значения
+                                                document.getElementById(`productCardQuantity${item.id}`).value = null;
+                                                document.getElementById(`productCardCost${item.id}`).value = null;
+                                            }
+                                            // обновляем список предупреждений для пользователя
+                                            _this.setState({
+                                                alertForUserAddedProduct: _this.alertForUserAddedProduct
+                                            });
+                                        }}
+                                    >
+                                        SaveChanges
+                                    </Button>
+
                                 </CardBody>
                             </Card>
                         );
